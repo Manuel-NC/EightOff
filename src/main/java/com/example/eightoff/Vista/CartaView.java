@@ -9,8 +9,10 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
+// Componente JavaFX para dibujar la tarjeta gráfica de una carta
 public class CartaView extends VBox {
 
+    // Configura dimensiones, estilos de borde (resaltado amarillo/azul de pista) y etiquetas de texto
     public CartaView(CartaInglesa carta, boolean seleccionada, boolean destacadaPista) {
         setPrefSize(50, 75);
         setMinSize(50, 75);
@@ -20,10 +22,13 @@ public class CartaView extends VBox {
 
         String borderAndBackground;
         if (destacadaPista) {
+            // Fondo e iluminación azul para sugerencia de pista
             borderAndBackground = "-fx-background-color: #90caf9; -fx-border-color: #1565c0; -fx-border-width: 2.5px;";
         } else if (seleccionada) {
+            // Fondo e iluminación amarilla para selección de carta/bloque activa
             borderAndBackground = "-fx-background-color: #fff9c4; -fx-border-color: #ffcc00; -fx-border-width: 2.5px;";
         } else {
+            // Carta normal
             borderAndBackground = "-fx-background-color: #ffffff; -fx-border-color: #222222; -fx-border-width: 1px;";
         }
 
@@ -48,6 +53,7 @@ public class CartaView extends VBox {
         lblValor.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
         lblValor.setStyle("-fx-text-fill: " + colorTexto + ";");
 
+        // Limpia caracteres especiales para renderizar correctamente el símbolo
         String figuraLimpia = carta.getPalo().getFigura().replace("\uFE0F", "").replace("\uFE0E", "");
 
         Label lblPalo = new Label(figuraLimpia);

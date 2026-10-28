@@ -1,7 +1,9 @@
 package com.example.eightoff.Vista;
 
+import com.example.eightoff.Controlador.EightOffControlador;
 import com.example.eightoff.Modelo.CartaInglesa;
 import com.example.eightoff.Modelo.EightOffModelo;
+import com.example.eightoff.Modelo.Pista;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
@@ -18,30 +20,37 @@ import javafx.stage.Stage;
 
 import java.util.ArrayList;
 
+// Construye la ventana y renderiza visualmente el estado del tablero
 public class EightOffGUI {
 
     private Button btnDeshacer;
     private Button btnPista;
     private Button btnNuevoJuego;
+    private Label lblMensajePista;
 
     private StackPane[] casillasReserva;
     private StackPane[] casillasFundacion;
     private Group[] columnasGrupo;
+    private StackPane[] fondosColumna;
 
     public EightOffGUI() {
         casillasReserva = new StackPane[8];
         casillasFundacion = new StackPane[4];
         columnasGrupo = new Group[8];
+        fondosColumna = new StackPane[8];
     }
 
+    // Crea el panel principal, botones superiores, casillas vacías de reserva/fundación y área de juego
     public void construirInterfaz(Stage stage) {
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(15));
         root.setStyle("-fx-background-color: #2b5d34;");
 
+        VBox panelSuperior = new VBox(10);
+        panelSuperior.setAlignment(Pos.CENTER);
+
         HBox barraAcciones = new HBox(15);
         barraAcciones.setAlignment(Pos.CENTER);
-        barraAcciones.setPadding(new Insets(0, 0, 15, 0));
 
         String estiloBoton = "-fx-background-color: #ffffff; -fx-text-fill: #000000; " +
                 "-fx-font-weight: bold; -fx-cursor: hand; " +
@@ -57,10 +66,17 @@ public class EightOffGUI {
         btnNuevoJuego.setStyle(estiloBoton);
 
         barraAcciones.getChildren().addAll(btnDeshacer, btnPista, btnNuevoJuego);
-        root.setTop(barraAcciones);
+
+        lblMensajePista = new Label("");
+        lblMensajePista.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
+        lblMensajePista.setStyle("-fx-text-fill: #ffffff;");
+
+        panelSuperior.getChildren().addAll(barraAcciones, lblMensajePista);
+        root.setTop(panelSuperior);
 
         VBox areaJuego = new VBox(20);
         areaJuego.setAlignment(Pos.TOP_CENTER);
+        areaJuego.setPadding(new Insets(15, 0, 0, 0));
 
         HBox zonaSuperior = new HBox(20);
         zonaSuperior.setAlignment(Pos.CENTER);
@@ -86,58 +102,80 @@ public class EightOffGUI {
 
         for (int col = 0; col < 8; col++) {
             columnasGrupo[col] = new Group();
-            StackPane fondoColumna = crearCasillaVacia();
-            columnasGrupo[col].getChildren().add(fondoColumna);
+            fondosColumna[col] = crearCasillaVacia();
+            columnasGrupo[col].getChildren().add(fondosColumna[col]);
             tableroColumnas.getChildren().add(columnasGrupo[col]);
         }
 
         areaJuego.getChildren().addAll(zonaSuperior, tableroColumnas);
         root.setCenter(areaJuego);
 
-        Scene scene = new Scene(root, 920, 680);
-        stage.setTitle("Eight Off Solitaire");
+        Scene scene = new Scene(root, 940, 700);
+        stage.setTitle("Eight Off");
         stage.setScene(scene);
         stage.show();
     }
 
-    public void actualizarTablero(EightOffModelo modelo, int tipoSeleccion, int idxSeleccion) {
+    // Redibuja las cartas en sus contenedores actualizados y asigna los eventos de clic
+    public void actualizarTablero(EightOffModelo modelo, int tipoSeleccion, int idxSeleccion, int cardIdxSeleccion, Pista.PistaResultado pista, EightOffControlador controlador) {
+
+        btnDeshacer.setDisable(!modelo.puedeDeshacer()); // Deshabilita el botón Undo si no hay movimientos
+
+        // Renderizar reservas
         for (int i = 0; i < 8; i++) {
+            int index = i;
             casillasReserva[i].getChildren().clear();
+            casillasReserva[i].setOnMouseClicked(e -> controlador.gestionarSeleccionCasilla(modelo.tipoReserva, index, 0));
             ArrayList<CartaInglesa> cartas = modelo.getReserva(i);
             if (!cartas.isEmpty()) {
                 boolean seleccionada = (tipoSeleccion == modelo.tipoReserva && idxSeleccion == i);
-                casillasReserva[i].getChildren().add(crearTarjetaCarta(cartas.get(0), seleccionada));
+                boolean esMovible = (pista != null && pista.esReservaMovible(i));
+                casillasReserva[i].getChildren().add(new CartaView(cartas.get(0), seleccionada, esMovible));
             }
         }
 
+        // Renderizar fundaciones
         for (int i = 0; i < 4; i++) {
+            int index = i;
             casillasFundacion[i].getChildren().clear();
+            casillasFundacion[i].setOnMouseClicked(e -> controlador.gestionarSeleccionCasilla(modelo.tipoFundacion, index, 0));
             ArrayList<CartaInglesa> cartas = modelo.getFundacion(i);
             if (!cartas.isEmpty()) {
                 CartaInglesa ultima = cartas.get(cartas.size() - 1);
-                casillasFundacion[i].getChildren().add(crearTarjetaCarta(ultima, false));
+                casillasFundacion[i].getChildren().add(new CartaView(ultima, false, false));
             }
         }
 
+        // Renderizar columnas de cartas apiladas en cascada
         for (int col = 0; col < 8; col++) {
+            int colIdx = col;
             columnasGrupo[col].getChildren().clear();
 
-            StackPane fondo = crearCasillaVacia();
-            columnasGrupo[col].getChildren().add(fondo);
+            fondosColumna[col] = crearCasillaVacia();
+            fondosColumna[col].setOnMouseClicked(e -> controlador.gestionarSeleccionCasilla(modelo.tipoColumna, colIdx, -1));
+            columnasGrupo[col].getChildren().add(fondosColumna[col]);
 
             ArrayList<CartaInglesa> cartas = modelo.getColumna(col);
             for (int cardIdx = 0; cardIdx < cartas.size(); cardIdx++) {
+                int currentCardIdx = cardIdx;
                 CartaInglesa c = cartas.get(cardIdx);
-                boolean esUltima = (cardIdx == cartas.size() - 1);
-                boolean seleccionada = esUltima && (tipoSeleccion == modelo.tipoColumna && idxSeleccion == col);
 
-                VBox tarjetaVisual = crearTarjetaCarta(c, seleccionada);
-                tarjetaVisual.setTranslateY(cardIdx * 32);
+                boolean seleccionada = (tipoSeleccion == modelo.tipoColumna && idxSeleccion == col && cardIdx >= cardIdxSeleccion);
+                boolean esMovible = (pista != null && pista.esCartaColumnaMovible(col, cardIdx));
+
+                CartaView tarjetaVisual = new CartaView(c, seleccionada, esMovible);
+                tarjetaVisual.setTranslateY(cardIdx * 32); // Desplazamiento vertical en cascada
+                tarjetaVisual.setOnMouseClicked(e -> {
+                    e.consume();
+                    controlador.gestionarSeleccionCasilla(modelo.tipoColumna, colIdx, currentCardIdx);
+                });
+
                 columnasGrupo[col].getChildren().add(tarjetaVisual);
             }
         }
     }
 
+    // Genera el recuadro gris transparente para las zonas sin cartas
     private StackPane crearCasillaVacia() {
         StackPane casilla = new StackPane();
         casilla.setPrefSize(50, 75);
@@ -153,55 +191,13 @@ public class EightOffGUI {
         return casilla;
     }
 
-    private VBox crearTarjetaCarta(CartaInglesa carta, boolean seleccionada) {
-        VBox tarjeta = new VBox();
-        tarjeta.setPrefSize(50, 75);
-        tarjeta.setMinSize(50, 75);
-        tarjeta.setMaxSize(50, 75);
-        tarjeta.setAlignment(Pos.TOP_CENTER);
-        tarjeta.setPadding(new Insets(4, 0, 0, 0));
-
-        String borderStyle = seleccionada ? "-fx-border-color: #ffcc00; -fx-border-width: 2.5px;"
-                : "-fx-border-color: #222222; -fx-border-width: 1px;";
-
-        tarjeta.setStyle(
-                "-fx-background-color: white; " + borderStyle +
-                        "-fx-border-radius: 5px; -fx-background-radius: 5px; " +
-                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 3, 0, 0, 1);"
-        );
-
-        String valorTexto = String.valueOf(carta.getValor());
-        if (carta.getValor() == 11) valorTexto = "J";
-        else if (carta.getValor() == 12) valorTexto = "Q";
-        else if (carta.getValor() == 13) valorTexto = "K";
-        else if (carta.getValor() == 14 || carta.getValor() == 1) valorTexto = "A";
-
-        String colorTexto = carta.getColor().equalsIgnoreCase("rojo") ? "#cc0000" : "#000000";
-
-        HBox contenido = new HBox(2);
-        contenido.setAlignment(Pos.CENTER);
-
-        Label lblValor = new Label(valorTexto);
-        lblValor.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-        lblValor.setStyle("-fx-text-fill: " + colorTexto + ";");
-
-        // Limpiamos los caracteres de seleccion de variacion (\uFE0F y \uFE0E)
-        String figuraLimpia = carta.getPalo().getFigura().replace("\uFE0F", "").replace("\uFE0E", "");
-
-        Label lblPalo = new Label(figuraLimpia);
-        lblPalo.setFont(Font.font("Segoe UI Symbol", 14));
-        lblPalo.setStyle("-fx-text-fill: " + colorTexto + ";");
-
-        contenido.getChildren().addAll(lblValor, lblPalo);
-        tarjeta.getChildren().add(contenido);
-
-        return tarjeta;
+    // Actualiza la barra superior de texto
+    public void setMensajePista(String texto) {
+        lblMensajePista.setText(texto);
     }
 
+    // Getters de los botones principales
     public Button getBtnDeshacer() { return btnDeshacer; }
     public Button getBtnPista() { return btnPista; }
     public Button getBtnNuevoJuego() { return btnNuevoJuego; }
-    public StackPane[] getCasillasReserva() { return casillasReserva; }
-    public StackPane[] getCasillasFundacion() { return casillasFundacion; }
-    public Group[] getColumnasGrupo() { return columnasGrupo; }
 }

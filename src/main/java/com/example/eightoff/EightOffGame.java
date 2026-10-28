@@ -6,8 +6,10 @@ import com.example.eightoff.Vista.EightOffGUI;
 import javafx.application.Application;
 import javafx.stage.Stage;
 
+// Punto de entrada principal de la aplicación JavaFX
 public class EightOffGame extends Application {
 
+    // Inicializa la arquitectura MVC y lanza el Stage principal
     @Override
     public void start(Stage primaryStage) {
         EightOffModelo modelo = new EightOffModelo();
