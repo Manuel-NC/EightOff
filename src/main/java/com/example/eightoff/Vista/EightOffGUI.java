@@ -185,7 +185,10 @@ public class EightOffGUI {
         lblValor.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
         lblValor.setStyle("-fx-text-fill: " + colorTexto + ";");
 
-        Label lblPalo = new Label(carta.getPalo().getFigura());
+        // Limpiamos los caracteres de seleccion de variacion (\uFE0F y \uFE0E)
+        String figuraLimpia = carta.getPalo().getFigura().replace("\uFE0F", "").replace("\uFE0E", "");
+
+        Label lblPalo = new Label(figuraLimpia);
         lblPalo.setFont(Font.font("Segoe UI Symbol", 14));
         lblPalo.setStyle("-fx-text-fill: " + colorTexto + ";");
 
