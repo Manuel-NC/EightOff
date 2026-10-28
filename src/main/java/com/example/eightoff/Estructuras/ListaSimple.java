@@ -60,4 +60,8 @@ public class ListaSimple<T> {
         }
         return r.getDato();
     }
+
+    public boolean estaVacia() {
+        return inicio == null;
+    }
 }

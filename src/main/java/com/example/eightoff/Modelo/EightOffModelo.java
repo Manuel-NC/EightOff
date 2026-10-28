@@ -208,7 +208,7 @@ public class EightOffModelo {
 
     public CartaInglesa obtenerCartaSuperior(int tipo, int indice) {
         ListaSimple<CartaInglesa> lista = obtenerLista(tipo, indice);
-        if (lista == null) return null;
+        if (lista == null || lista.estaVacia()) return null;
 
         CartaInglesa carta = lista.eliminaFin();
         if (carta != null) {
@@ -238,9 +238,11 @@ public class EightOffModelo {
 
     public ArrayList<CartaInglesa> obtenerCartasDeLista(ListaSimple<CartaInglesa> lista) {
         ArrayList<CartaInglesa> resultado = new ArrayList<>();
-        CartaInglesa c;
-        while ((c = lista.eliminaInicio()) != null) {
-            resultado.add(c);
+        if (lista == null) return resultado;
+
+        // Se detiene antes de llamar a eliminaInicio() sobre una lista vacia
+        while (!lista.estaVacia()) {
+            resultado.add(lista.eliminaInicio());
         }
         for (CartaInglesa carta : resultado) {
             lista.insertarFin(carta);
